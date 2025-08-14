@@ -38,6 +38,7 @@
 #endif
 
 #include <stdint.h>
+#include <time.h>
 
 enum EPOLL_EVENTS {
   EPOLLIN          = (unsigned) (1U <<  0),
@@ -85,6 +86,12 @@ enum EPOLL_EVENTS {
 typedef void* HANDLE;
 typedef uintptr_t SOCKET;
 
+#define _SIGSET_NWORDS (1024 / (8 * sizeof (size_t)))
+typedef struct
+{
+    size_t __val[_SIGSET_NWORDS];
+} sigset_t;
+
 typedef union epoll_data {
   void* ptr;
   int fd;
@@ -117,6 +124,16 @@ WEPOLL_EXPORT int epoll_wait(HANDLE ephnd,
                              struct epoll_event* events,
                              int maxevents,
                              int timeout);
+WEPOLL_EXPORT int epoll_pwait(HANDLE ephnd,
+                              struct epoll_event* events,
+                              int maxevents,
+                              int timeout,
+                              const sigset_t* sigmask);
+WEPOLL_EXPORT int epoll_pwait2(HANDLE ephnd,
+                               struct epoll_event* events,
+                               int maxevents,
+                               const struct timespec* timeout,
+                               const sigset_t* sigmask);
 
 #ifdef __cplusplus
 } /* extern "C" */
