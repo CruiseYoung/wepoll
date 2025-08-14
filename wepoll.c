@@ -569,17 +569,17 @@ static HANDLE epoll__create(void) {
   ts_tree_node_t* tree_node;
 
   if (init() < 0)
-    return NULL;
+    return INVALID_HANDLE_VALUE;
 
   port_state = port_new(&ephnd);
   if (port_state == NULL)
-    return NULL;
+    return INVALID_HANDLE_VALUE;
 
   tree_node = port_state_to_handle_tree_node(port_state);
   if (ts_tree_add(&epoll__handle_tree, tree_node, (uintptr_t) ephnd) < 0) {
     /* This should never happen. */
     port_delete(port_state);
-    return_set_error(NULL, ERROR_ALREADY_EXISTS);
+    return_set_error(INVALID_HANDLE_VALUE, ERROR_ALREADY_EXISTS);
   }
 
   return ephnd;
@@ -587,14 +587,14 @@ static HANDLE epoll__create(void) {
 
 HANDLE epoll_create(int size) {
   if (size <= 0)
-    return_set_error(NULL, ERROR_INVALID_PARAMETER);
+    return_set_error(INVALID_HANDLE_VALUE, ERROR_INVALID_PARAMETER);
 
   return epoll__create();
 }
 
 HANDLE epoll_create1(int flags) {
-  if (flags != 0)
-    return_set_error(NULL, ERROR_INVALID_PARAMETER);
+  if (flags & ~EPOLL_CLOEXEC)
+    return_set_error(INVALID_HANDLE_VALUE, ERROR_INVALID_PARAMETER);
 
   return epoll__create();
 }
