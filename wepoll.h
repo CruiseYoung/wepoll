@@ -31,6 +31,7 @@
 
 #ifndef WEPOLL_H_
 #define WEPOLL_H_
+#pragma once
 
 #ifndef WEPOLL_EXPORT
 #define WEPOLL_EXPORT
