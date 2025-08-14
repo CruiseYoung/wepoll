@@ -28,47 +28,68 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
+#if 1
+#include "wepoll.h"
+#else
 
 #ifndef WEPOLL_EXPORT
 #define WEPOLL_EXPORT
 #endif
 
 #include <stdint.h>
+#include <time.h>
 
 enum EPOLL_EVENTS {
-  EPOLLIN      = (int) (1U <<  0),
-  EPOLLPRI     = (int) (1U <<  1),
-  EPOLLOUT     = (int) (1U <<  2),
-  EPOLLERR     = (int) (1U <<  3),
-  EPOLLHUP     = (int) (1U <<  4),
-  EPOLLRDNORM  = (int) (1U <<  6),
-  EPOLLRDBAND  = (int) (1U <<  7),
-  EPOLLWRNORM  = (int) (1U <<  8),
-  EPOLLWRBAND  = (int) (1U <<  9),
-  EPOLLMSG     = (int) (1U << 10), /* Never reported. */
-  EPOLLRDHUP   = (int) (1U << 13),
-  EPOLLONESHOT = (int) (1U << 30)
+  EPOLLIN          = (unsigned) (1U <<  0),
+  EPOLLPRI         = (unsigned) (1U <<  1),
+  EPOLLOUT         = (unsigned) (1U <<  2),
+  EPOLLERR         = (unsigned) (1U <<  3),
+  EPOLLHUP         = (unsigned) (1U <<  4),
+  EPOLLNVAL        = (unsigned) (1U <<  5),
+  EPOLLRDNORM      = (unsigned) (1U <<  6),
+  EPOLLRDBAND      = (unsigned) (1U <<  7),
+  EPOLLWRNORM      = (unsigned) (1U <<  8),
+  EPOLLWRBAND      = (unsigned) (1U <<  9),
+  EPOLLMSG         = (unsigned) (1U << 10), /* Never reported. */
+  EPOLLRDHUP       = (unsigned) (1U << 13),
+  EPOLL_URING_WAKE = (unsigned) (1U << 27),
+  EPOLLEXCLUSIVE   = (unsigned) (1U << 28),
+  EPOLLWAKEUP      = (unsigned) (1U << 29),
+  EPOLLONESHOT     = (unsigned) (1U << 30),
+  EPOLLET          = (unsigned) (1U << 31)
 };
 
-#define EPOLLIN      (1U <<  0)
-#define EPOLLPRI     (1U <<  1)
-#define EPOLLOUT     (1U <<  2)
-#define EPOLLERR     (1U <<  3)
-#define EPOLLHUP     (1U <<  4)
-#define EPOLLRDNORM  (1U <<  6)
-#define EPOLLRDBAND  (1U <<  7)
-#define EPOLLWRNORM  (1U <<  8)
-#define EPOLLWRBAND  (1U <<  9)
-#define EPOLLMSG     (1U << 10)
-#define EPOLLRDHUP   (1U << 13)
-#define EPOLLONESHOT (1U << 30)
+#define EPOLLIN          (1U <<  0)
+#define EPOLLPRI         (1U <<  1)
+#define EPOLLOUT         (1U <<  2)
+#define EPOLLERR         (1U <<  3)
+#define EPOLLHUP         (1U <<  4)
+#define EPOLLNVAL        (1U <<  5)
+#define EPOLLRDNORM      (1U <<  6)
+#define EPOLLRDBAND      (1U <<  7)
+#define EPOLLWRNORM      (1U <<  8)
+#define EPOLLWRBAND      (1U <<  9)
+#define EPOLLMSG         (1U << 10)
+#define EPOLLRDHUP       (1U << 13)
+#define EPOLL_URING_WAKE (1U << 27)
+#define EPOLLEXCLUSIVE   (1U << 28)
+#define EPOLLWAKEUP      (1U << 29)
+#define EPOLLONESHOT     (1U << 30)
+#define EPOLLET          (1U << 31)
 
-#define EPOLL_CTL_ADD 1
-#define EPOLL_CTL_MOD 2
-#define EPOLL_CTL_DEL 3
+#define EPOLL_CTL_ADD    1
+#define EPOLL_CTL_DEL    2
+#define EPOLL_CTL_MOD    3
+#define EPOLL_CLOEXEC    02000000
 
 typedef void* HANDLE;
 typedef uintptr_t SOCKET;
+
+#define _SIGSET_NWORDS (1024 / (8 * sizeof (size_t)))
+typedef struct
+{
+    size_t __val[_SIGSET_NWORDS];
+} sigset_t;
 
 typedef union epoll_data {
   void* ptr;
@@ -102,9 +123,20 @@ WEPOLL_EXPORT int epoll_wait(HANDLE ephnd,
                              struct epoll_event* events,
                              int maxevents,
                              int timeout);
+WEPOLL_EXPORT int epoll_pwait(HANDLE ephnd,
+                              struct epoll_event* events,
+                              int maxevents,
+                              int timeout,
+                              const sigset_t* sigmask);
+WEPOLL_EXPORT int epoll_pwait2(HANDLE ephnd,
+                               struct epoll_event* events,
+                               int maxevents,
+                               const struct timespec* timeout,
+                               const sigset_t* sigmask);
 
 #ifdef __cplusplus
 } /* extern "C" */
+#endif
 #endif
 
 #include <assert.h>
@@ -122,8 +154,9 @@ WEPOLL_EXPORT int epoll_wait(HANDLE ephnd,
 #pragma warning(push, 1)
 #endif
 
-#undef WIN32_LEAN_AND_MEAN
+#ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
+#endif
 
 #undef _WIN32_WINNT
 #define _WIN32_WINNT 0x0600
@@ -531,17 +564,17 @@ static HANDLE epoll__create(void) {
   ts_tree_node_t* tree_node;
 
   if (init() < 0)
-    return NULL;
+    return INVALID_HANDLE_VALUE;
 
   port_state = port_new(&ephnd);
   if (port_state == NULL)
-    return NULL;
+    return INVALID_HANDLE_VALUE;
 
   tree_node = port_state_to_handle_tree_node(port_state);
   if (ts_tree_add(&epoll__handle_tree, tree_node, (uintptr_t) ephnd) < 0) {
     /* This should never happen. */
     port_delete(port_state);
-    return_set_error(NULL, ERROR_ALREADY_EXISTS);
+    return_set_error(INVALID_HANDLE_VALUE, ERROR_ALREADY_EXISTS);
   }
 
   return ephnd;
@@ -549,14 +582,14 @@ static HANDLE epoll__create(void) {
 
 HANDLE epoll_create(int size) {
   if (size <= 0)
-    return_set_error(NULL, ERROR_INVALID_PARAMETER);
+    return_set_error(INVALID_HANDLE_VALUE, ERROR_INVALID_PARAMETER);
 
   return epoll__create();
 }
 
 HANDLE epoll_create1(int flags) {
-  if (flags != 0)
-    return_set_error(NULL, ERROR_INVALID_PARAMETER);
+  if (flags & ~EPOLL_CLOEXEC)
+    return_set_error(INVALID_HANDLE_VALUE, ERROR_INVALID_PARAMETER);
 
   return epoll__create();
 }
@@ -651,6 +684,32 @@ int epoll_wait(HANDLE ephnd,
 err:
   err_check_handle(ephnd);
   return -1;
+}
+
+int epoll_pwait(HANDLE ephnd,
+                struct epoll_event* events,
+                int maxevents,
+                int timeout,
+                const sigset_t* sigmask)
+{
+    (void)sigmask;
+    return epoll_wait(ephnd, events, maxevents, timeout);
+}
+
+int epoll_pwait2(HANDLE ephnd,
+                 struct epoll_event* events,
+                 int maxevents,
+                 const struct timespec* timeout,
+                 const sigset_t* sigmask)
+{
+    int timeout_ms = -1;
+    if (timeout != NULL)
+    {
+        timeout_ms += (int)timeout->tv_sec * 1000;
+        timeout_ms += ((int)timeout->tv_nsec + 1000000 - 1) % 1000000;
+    }
+
+    return epoll_pwait(ephnd, events, maxevents, timeout_ms, sigmask);
 }
 
 #include <errno.h>
