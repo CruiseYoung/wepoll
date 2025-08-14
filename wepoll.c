@@ -137,8 +137,9 @@ WEPOLL_EXPORT int epoll_wait(HANDLE ephnd,
 #pragma warning(push, 1)
 #endif
 
-#undef WIN32_LEAN_AND_MEAN
+#ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
+#endif
 
 #undef _WIN32_WINNT
 #define _WIN32_WINNT 0x0600
