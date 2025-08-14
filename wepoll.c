@@ -28,6 +28,9 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
+#if 1
+#include "wepoll.h"
+#else
 
 #ifndef WEPOLL_EXPORT
 #define WEPOLL_EXPORT
@@ -116,6 +119,7 @@ WEPOLL_EXPORT int epoll_wait(HANDLE ephnd,
 
 #ifdef __cplusplus
 } /* extern "C" */
+#endif
 #endif
 
 #include <assert.h>
