@@ -81,7 +81,7 @@ enum EPOLL_EVENTS {
 #define EPOLL_CTL_ADD    1
 #define EPOLL_CTL_DEL    2
 #define EPOLL_CTL_MOD    3
-#define EPOLL_CLOEXEC    02000000
+#define EPOLL_CLOEXEC    02000000 /*O_CLOEXEC*/
 
 typedef void* HANDLE;
 typedef uintptr_t SOCKET;

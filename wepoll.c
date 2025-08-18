@@ -80,7 +80,7 @@ enum EPOLL_EVENTS {
 #define EPOLL_CTL_ADD    1
 #define EPOLL_CTL_DEL    2
 #define EPOLL_CTL_MOD    3
-#define EPOLL_CLOEXEC    02000000
+#define EPOLL_CLOEXEC    02000000 /*O_CLOEXEC*/
 
 typedef void* HANDLE;
 typedef uintptr_t SOCKET;
@@ -614,11 +614,26 @@ HANDLE epoll_create(int size) {
   return epoll__create();
 }
 
+#include <handleapi.h>
 HANDLE epoll_create1(int flags) {
   if (flags & ~EPOLL_CLOEXEC)
     return_set_error(INVALID_HANDLE_VALUE, ERROR_INVALID_PARAMETER);
 
-  return epoll__create();
+  HANDLE ephnd = epoll__create();
+  if (ephnd == INVALID_HANDLE_VALUE) {
+    return INVALID_HANDLE_VALUE;
+  }
+
+  if (flags & EPOLL_CLOEXEC) {
+    if (!SetHandleInformation((HANDLE)ephnd, HANDLE_FLAG_INHERIT, 0)) {
+      DWORD error = GetLastError();
+      epoll_close(ephnd);
+      err_set_win_error(error);
+      return INVALID_HANDLE_VALUE;
+    }
+  }
+
+  return ephnd;
 }
 
 int epoll_close(HANDLE ephnd) {
@@ -717,26 +732,23 @@ int epoll_pwait(HANDLE ephnd,
                 struct epoll_event* events,
                 int maxevents,
                 int timeout,
-                const sigset_t* sigmask)
-{
-    (void)sigmask;
-    return epoll_wait(ephnd, events, maxevents, timeout);
+                const sigset_t* sigmask) {
+  (void)sigmask;
+  return epoll_wait(ephnd, events, maxevents, timeout);
 }
 
 int epoll_pwait2(HANDLE ephnd,
                  struct epoll_event* events,
                  int maxevents,
                  const struct timespec* timeout,
-                 const sigset_t* sigmask)
-{
-    int timeout_ms = -1;
-    if (timeout != NULL)
-    {
-        timeout_ms += (int)timeout->tv_sec * 1000;
-        timeout_ms += ((int)timeout->tv_nsec + 1000000 - 1) % 1000000;
-    }
+                 const sigset_t* sigmask) {
+  int timeout_ms = -1;
+  if (timeout != NULL) {
+    timeout_ms += (int)timeout->tv_sec * 1000;
+    timeout_ms += ((int)timeout->tv_nsec + 1000000 - 1) % 1000000;
+  }
 
-    return epoll_pwait(ephnd, events, maxevents, timeout_ms, sigmask);
+  return epoll_pwait(ephnd, events, maxevents, timeout_ms, sigmask);
 }
 
 #include <errno.h>
