@@ -747,7 +747,7 @@ int epoll_pwait2(HANDLE ephnd,
                  const sigset_t* sigmask) {
   int timeout_ms = -1;
   if (timeout != NULL) {
-    timeout_ms += (int)timeout->tv_sec * 1000;
+    timeout_ms = (int)timeout->tv_sec * 1000;
     timeout_ms += ((int)timeout->tv_nsec + 1000000 - 1) % 1000000;
   }
 
