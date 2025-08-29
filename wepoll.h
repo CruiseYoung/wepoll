@@ -41,47 +41,50 @@
 #include <time.h>
 
 enum EPOLL_EVENTS {
-  EPOLLIN          = (unsigned) (1U <<  0),
-  EPOLLPRI         = (unsigned) (1U <<  1),
-  EPOLLOUT         = (unsigned) (1U <<  2),
-  EPOLLERR         = (unsigned) (1U <<  3),
-  EPOLLHUP         = (unsigned) (1U <<  4),
-  EPOLLNVAL        = (unsigned) (1U <<  5),
-  EPOLLRDNORM      = (unsigned) (1U <<  6),
-  EPOLLRDBAND      = (unsigned) (1U <<  7),
-  EPOLLWRNORM      = (unsigned) (1U <<  8),
-  EPOLLWRBAND      = (unsigned) (1U <<  9),
-  EPOLLMSG         = (unsigned) (1U << 10), /* Never reported. */
-  EPOLLRDHUP       = (unsigned) (1U << 13),
-  EPOLL_URING_WAKE = (unsigned) (1U << 27),
-  EPOLLEXCLUSIVE   = (unsigned) (1U << 28),
-  EPOLLWAKEUP      = (unsigned) (1U << 29),
-  EPOLLONESHOT     = (unsigned) (1U << 30),
-  EPOLLET          = (unsigned) (1U << 31)
+  EPOLLIN          = 0x0001,
+#define EPOLLIN          EPOLLIN
+  EPOLLPRI         = 0x0002,
+#define EPOLLPRI         EPOLLPRI
+  EPOLLOUT         = 0x0004,
+#define EPOLLOUT         EPOLLOUT
+  EPOLLERR         = 0x0008,
+#define EPOLLERR         EPOLLERR
+  EPOLLHUP         = 0x0010,
+#define EPOLLHUP         EPOLLHUP
+  EPOLLNVAL        = 0x0020,
+#define EPOLLNVAL        EPOLLNVAL
+  EPOLLRDNORM      = 0x0040,
+#define EPOLLRDNORM      EPOLLRDNORM
+  EPOLLRDBAND      = 0x0080,
+#define EPOLLRDBAND      EPOLLRDBAND
+  EPOLLWRNORM      = 0x0100,
+#define EPOLLWRNORM      EPOLLWRNORM
+  EPOLLWRBAND      = 0x0200,
+#define EPOLLWRBAND      EPOLLWRBAND
+  EPOLLMSG         = 0x0400, /* Never reported. */
+#define EPOLLMSG         EPOLLMSG
+  EPOLLRDHUP       = 0x2000,
+#define EPOLLRDHUP       EPOLLRDHUP
+  EPOLL_URING_WAKE = (unsigned)(1U << 27),
+#define EPOLL_URING_WAKE EPOLL_URING_WAKE
+  EPOLLEXCLUSIVE   = (unsigned)(1U << 28),
+#define EPOLLEXCLUSIVE   EPOLLEXCLUSIVE
+  EPOLLWAKEUP      = (unsigned)(1U << 29),
+#define EPOLLWAKEUP      EPOLLWAKEUP
+  EPOLLONESHOT     = (unsigned)(1U << 30),
+#define EPOLLONESHOT     EPOLLONESHOT
+  EPOLLET          = (unsigned)(1U << 31)
+#define EPOLLET          EPOLLET
 };
-
-#define EPOLLIN          (1U <<  0)
-#define EPOLLPRI         (1U <<  1)
-#define EPOLLOUT         (1U <<  2)
-#define EPOLLERR         (1U <<  3)
-#define EPOLLHUP         (1U <<  4)
-#define EPOLLNVAL        (1U <<  5)
-#define EPOLLRDNORM      (1U <<  6)
-#define EPOLLRDBAND      (1U <<  7)
-#define EPOLLWRNORM      (1U <<  8)
-#define EPOLLWRBAND      (1U <<  9)
-#define EPOLLMSG         (1U << 10)
-#define EPOLLRDHUP       (1U << 13)
-#define EPOLL_URING_WAKE (1U << 27)
-#define EPOLLEXCLUSIVE   (1U << 28)
-#define EPOLLWAKEUP      (1U << 29)
-#define EPOLLONESHOT     (1U << 30)
-#define EPOLLET          (1U << 31)
 
 #define EPOLL_CTL_ADD    1
 #define EPOLL_CTL_DEL    2
 #define EPOLL_CTL_MOD    3
-#define EPOLL_CLOEXEC    02000000 /*O_CLOEXEC*/
+
+enum {
+  EPOLL_CLOEXEC = 02000000 /*O_CLOEXEC*/
+#define EPOLL_CLOEXEC EPOLL_CLOEXEC
+};
 
 typedef void* HANDLE;
 typedef uintptr_t SOCKET;
