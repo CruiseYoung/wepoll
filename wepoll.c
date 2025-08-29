@@ -91,7 +91,7 @@ typedef uintptr_t SOCKET;
 #define _SIGSET_NWORDS (1024 / (8 * sizeof (size_t)))
 typedef struct
 {
-    size_t __val[_SIGSET_NWORDS];
+  size_t __val[_SIGSET_NWORDS];
 } sigset_t;
 
 typedef union epoll_data {
